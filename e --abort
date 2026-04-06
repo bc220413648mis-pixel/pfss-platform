@@ -1,8 +1,0 @@
-[33m71d873b[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m)[m Fix: Added vercel.json and updated scan route with Axe-core
-[33md91c094[m chore: final database and auth fixes for production
-[33m3a32390[m fix: removed url from schema for Prisma 7 compatibility
-[33m79aa72e[m fix: corrected prisma schema relationship placement
-[33m042e70b[m fix: corrected typo in prisma schema cascade
-[33mfbb055b[m MVP Ready
-[33m6928f31[m Initial Pathfinder upload
-[33mb83712e[m Initial commit from Create Next App

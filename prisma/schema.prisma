@@ -4,187 +4,128 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // URL is managed via datasourceUrl in lib/prisma.ts for Prisma 7
 }
 
-// --- USER & ORGANIZATION ---
 model User {
-  id              String         @id @default(cuid())
-  email           String         @unique
-  name            String?
-  password        String
-  role            Role           @default(CLIENT)
-  verification    String?        @default("PENDING")
-  workload        Int            @default(0) 
-  orgId           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  // Relations
-  organization    Organization?  @relation(fields: [orgId], references: [id])
-  scans           ScanRun[]      
-  assignedAudits  AuditProject[] @relation("AssignedAuditor")
-  ownedAudits     AuditProject[] @relation("ClientOwner")
-  disputes        Dispute[]
-  receivedRatings Rating[]       @relation("AuditorRating") 
-  sentRatings     Rating[]       @relation("ClientRating")  
-  messages        Message[]
-  transactions    Transaction[]
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  password      String
+  role          Role           @default(CLIENT)
+  verification  String?        @default("PENDING")
+  workload      Int            @default(0)
+  orgId         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  auditProjects AuditProject[] @relation("AssignedAuditor")
+  clientAudits  AuditProject[] @relation("ClientOwner")
+  disputes      Dispute[]
+  ratings       Rating[]
+  scans         ScanRun[]
+  transactions  Transaction[]
+  organization  Organization?  @relation(fields: [orgId], references: [id])
 }
 
 model Organization {
-  id               String           @id @default(cuid())
-  name             String
-  subscriptionTier SubscriptionTier @default(BASIC) 
-  domains          String[]         
-  createdAt        DateTime         @default(now())
-  users            User[]
+  id           String           @id @default(cuid())
+  name         String
+  subscription SubscriptionTier @default(BASIC)
+  createdAt    DateTime         @default(now())
+  users        User[]
 }
 
-// --- SCANNING ENGINE (TIER 1 - AUTOMATED) ---
 model ScanRun {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
+  title      String
   url        String
-  title      String?
-  status     String   @default("COMPLETED")
+  status     String?     @default("COMPLETED")
   score      Int?
-  rawJson    Json?    
+  rawJson    Json?
   userId     String
-  createdAt  DateTime @default(now())
-
-  // Relations
-  user       User     @relation(fields: [userId], references: [id])
-  issues     Issue[]  @relation("ScanIssues")
+  createdAt  DateTime    @default(now())
   disputes   Dispute[]
+  issues     Issue[]
+  scanIssues ScanIssue[]
+  user       User        @relation(fields: [userId], references: [id])
 }
 
-// --- AUDIT WORKFLOW (TIER 2 & 3 - MANUAL/EXPERT) ---
+model ScanIssue {
+  id          String  @id @default(cuid())
+  title       String
+  description String
+  severity    String
+  wcagMapping String
+  scanRunId   String
+  scanRun     ScanRun @relation(fields: [scanRunId], references: [id], onDelete: Cascade)
+}
+
 model AuditProject {
-  id           String      @id @default(cuid())
-  domain       String
-  status       AuditStatus @default(DRAFT)
-  tier         SubscriptionTier
-  wcagVersion  String      @default("2.1")
-  complianceLevel String   @default("AA") // A, AA, AAA
-  deadline     DateTime?   
-  auditorId    String?
-  clientId     String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  // Relations
-  auditor      User?        @relation("AssignedAuditor", fields: [auditorId], references: [id])
-  client       User?        @relation("ClientOwner", fields: [clientId], references: [id])
-  pages        Page[]       // NEW: Track specific pages audited
-  issues       Issue[]      @relation("AuditIssues")
-  report       Report?
-  reviews      Review[]     
-  messages     Message[]
-  rating       Rating?      
-}
-
-model Page {
-  id             String       @id @default(cuid())
-  url            String
-  name           String       // e.g., "Checkout Page", "Home"
-  auditProjectId String
-  auditProject   AuditProject @relation(fields: [auditProjectId], references: [id], onDelete: Cascade)
-  issues         Issue[]      // Issues tied to this specific page
+  id        String      @id @default(cuid())
+  domain    String
+  status    AuditStatus @default(DRAFT)
+  tier      String
+  auditorId String?
+  clientId  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  auditor   User?       @relation("AssignedAuditor", fields: [auditorId], references: [id])
+  client    User?       @relation("ClientOwner", fields: [clientId], references: [id])
+  issues    Issue[]
+  report    Report?
+  reviews   Review[]
 }
 
 model Issue {
-  id             String      @id @default(cuid())
+  id             String        @id @default(cuid())
   title          String
+  severity       String
+  wcagMapping    String
   description    String
-  severity       Severity    @default(MEDIUM)
-  wcagMapping    String      // e.g., "1.1.1 Non-text Content"
-  helpUrl        String?     
-  recommendation String?     
-  status         IssueStatus @default(OPEN) 
-  isManual       Boolean     @default(false)
-  
-  // Relations
+  recommendation String?
+  isManual       Boolean       @default(false)
   scanRunId      String?
   auditProjectId String?
-  pageId         String?     // NEW: Link issue to a specific page
-  
+  issueType      String?       @default("Automated")
   evidence       Evidence[]
-  scanRun        ScanRun?      @relation("ScanIssues", fields: [scanRunId], references: [id], onDelete: Cascade)
-  auditProject   AuditProject? @relation("AuditIssues", fields: [auditProjectId], references: [id], onDelete: Cascade)
-  page           Page?         @relation(fields: [pageId], references: [id])
+  auditProject   AuditProject? @relation(fields: [auditProjectId], references: [id], onDelete: Cascade)
+  scanRun        ScanRun?      @relation(fields: [scanRunId], references: [id], onDelete: Cascade)
 }
 
 model Evidence {
   id          String @id @default(cuid())
-  url         String 
-  description String 
+  url         String
+  description String
   issueId     String
   issue       Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
 }
 
-// --- GOVERNANCE & FEEDBACK ---
 model Review {
-  id                String       @id @default(cuid())
-  notes             String
-  type              ReviewType   @default(QA) 
-  severityAccuracy  Int?         
-  wcagAccuracy      Int?         
-  clarityScore      Int?         
-  auditProjectId    String
-  createdAt         DateTime     @default(now())
-  auditProject      AuditProject @relation(fields: [auditProjectId], references: [id])
-}
-
-model Message {
   id             String       @id @default(cuid())
-  content        String
-  senderId       String
+  notes          String
+  status         String
   auditProjectId String
   createdAt      DateTime     @default(now())
-  sender         User         @relation(fields: [senderId], references: [id])
   auditProject   AuditProject @relation(fields: [auditProjectId], references: [id])
 }
 
-model Rating {
-  id              String       @id @default(cuid())
-  score           Int          
-  comment         String?
-  auditorId       String
-  clientId        String
-  auditProjectId  String       @unique
-  auditor         User         @relation("AuditorRating", fields: [auditorId], references: [id])
-  client          User         @relation("ClientRating", fields: [clientId], references: [id])
-  auditProject    AuditProject @relation(fields: [auditProjectId], references: [id])
-}
-
-// --- INFRASTRUCTURE ---
 model Report {
-  id              String       @id @default(cuid())
-  htmlContent     String       
-  pdfUrl          String?      
-  version         Int          @default(1)
-  auditProjectId  String       @unique
-  createdAt       DateTime     @default(now())
-  auditProject    AuditProject @relation(fields: [auditProjectId], references: [id])
-}
-
-model SystemSettings {
-  id             Int     @id @default(1)
-  ngoDiscount    Float   @default(50.0)
-  corporatePrice Float   @default(199.0)
-  slaDays        Int     @default(3)    
-  qaThreshold    Int     @default(90)   
-  brandColor     String  @default("#2563eb")
+  id             String       @id @default(cuid())
+  htmlContent    String
+  pdfUrl         String?
+  auditProjectId String       @unique
+  createdAt      DateTime     @default(now())
+  auditProject   AuditProject @relation(fields: [auditProjectId], references: [id])
 }
 
 model Transaction {
   id        String        @id @default(cuid())
   amount    Float
+  currency  String        @default("USD")
   status    PaymentStatus @default(PENDING)
   stripeId  String?       @unique
   userId    String
-  user      User          @relation(fields: [userId], references: [id])
   createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id])
 }
 
 model Dispute {
@@ -198,7 +139,27 @@ model Dispute {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-// --- ENUMS ---
+model Rating {
+  id      String  @id @default(cuid())
+  score   Int
+  comment String?
+  userId  String
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model SystemSettings {
+  id             Int     @id @default(1)
+  ngoDiscount    Float   @default(50.0)
+  corporatePrice Float   @default(199.0)
+  slaDays        Int     @default(3)
+  qaThreshold    Int     @default(90)
+  brandColor     String  @default("#2563eb")
+  companyLogo    String?
+  reportHeader   String  @default("Accessibility Audit Report")
+  reportFooter   String  @default("Confidential - Pathfinder Platform")
+  companyAddress String  @default("123 Tech Lane, Silicon Valley")
+}
+
 enum Role {
   CLIENT
   AUDITOR
@@ -206,40 +167,19 @@ enum Role {
   FOUNDER
 }
 
-enum Severity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
 enum AuditStatus {
   DRAFT
   IN_PROGRESS
   SUBMITTED_FOR_QA
   QA_RETURNED
-  QA_APPROVED
-  FOUNDER_REVIEW
   FOUNDER_APPROVED
   DELIVERED
-}
-
-enum IssueStatus {
-  OPEN
-  NEEDS_CLIENT_INPUT
-  FIXED_PENDING_VERIFY
-  VERIFIED
 }
 
 enum SubscriptionTier {
   BASIC
   PRO
   ENTERPRISE
-}
-
-enum ReviewType {
-  QA
-  FOUNDER
 }
 
 enum PaymentStatus {

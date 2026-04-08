@@ -59,7 +59,6 @@ export async function verifyAndActivateProject(sessionId: string) {
         data: { 
           status: "IN_PROGRESS", 
           tier: tier as "PRO" | "ENTERPRISE",
-          activatedAt: new Date() // Track activation time   
         }
       });
 

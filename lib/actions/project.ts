@@ -37,6 +37,6 @@ export async function createProject(formData: FormData) {
     },
   });
 
-  revalidatePath("/dashboard");
-  redirect(`/dashboard/projects/${project.id}/`);
+  revalidatePath("/dashboard/client");
+  redirect(`/dashboard/client/projects/${project.id}/`);
 }

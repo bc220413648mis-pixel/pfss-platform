@@ -1,6 +1,6 @@
 import { uploadEvidence } from "@/lib/actions/evidence";
-import IssueLogger from "@/app/components/projects/IssueLogger";
 import ScanButton from "@/app/components/projects/ScanButton";
+import DashboardShell from "@/app/components/dashboard-shell";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { 
@@ -45,6 +45,7 @@ export default async function ProjectDetailsPage(props: {
   };
 
   return (
+    <DashboardShell role="CLIENT">
     <div className="max-w-6xl mx-auto py-10 px-6">
       {/* --- HEADER SECTION --- */}
       <div className="flex flex-col md:flex-row justify-between items-start mb-10 border-b border-slate-200 pb-10 gap-6">
@@ -70,7 +71,7 @@ export default async function ProjectDetailsPage(props: {
         
         <div className="flex gap-3">
           <Link 
-            href={`/dashboard/projects/${id}/report`}
+            href={`/dashboard/client/projects/${id}/report`}
             className="flex items-center gap-2 bg-white border-2 border-slate-900 text-slate-900 px-6 py-4 rounded-2xl font-black hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
           >
             <FileBarChart className="w-5 h-5" /> View Report
@@ -204,9 +205,7 @@ export default async function ProjectDetailsPage(props: {
         </div>
 
       </div>
-
-      {/* Manual Issue Logger Drawer */}
-      <IssueLogger projectId={id} pages={project.pages} />
     </div>
+    </DashboardShell>
   );
 }

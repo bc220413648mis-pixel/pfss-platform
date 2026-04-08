@@ -24,6 +24,8 @@ model User {
   scans         ScanRun[]
   transactions  Transaction[]
   organization  Organization?  @relation(fields: [orgId], references: [id])
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
 }
 
 model Organization {
@@ -63,7 +65,7 @@ model AuditProject {
   id        String      @id @default(cuid())
   domain    String
   status    AuditStatus @default(DRAFT)
-  tier      String
+  tier      SubscriptionTier
   auditorId String?
   clientId  String?
   createdAt DateTime    @default(now())

@@ -47,7 +47,7 @@ export default async function ClientDashboard() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Your Digital Health</h1>
           </div>
           <Link 
-            href="/dashboard/projects/new" 
+            href="/dashboard/client/projects/new" 
             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
             <Plus className="w-5 h-5" /> New Compliance Audit
           </Link>

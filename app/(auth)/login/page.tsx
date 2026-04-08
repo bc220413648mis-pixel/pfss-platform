@@ -45,9 +45,29 @@ function AuthContent() {
         const data = await res.json();
         setError(data.error || "Registration failed.");
       }
+    }else if (view === "forgot") {
+    // NEW LOGIC FOR FORGOT PASSWORD
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      if (res.ok) {
+        alert("If an account exists with that email, a reset link has been sent.");
+        setView("login");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Something went wrong.");
+      }
+    } catch (err) {
+      setError("Failed to send reset email.");
     }
-    setLoading(false);
-  };
+  }
+  setLoading(false);
+};
+    
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
